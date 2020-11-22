@@ -66,6 +66,16 @@ const traefik = new k8s.helm.v3.Chart(
             "ELBSecurityPolicy-TLS-1-1-2017-01",
         },
       },
+      resources: {
+        requests: {
+          cpu: "1",
+          memory: "1Gi",
+        },
+        limits: {
+          cpu: "1",
+          memory: "1Gi",
+        },
+      },
     },
   },
   { provider: k8sProvider }
