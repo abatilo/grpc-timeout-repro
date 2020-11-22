@@ -1,2 +1,4 @@
 golang 1.15.5
 protoc 3.14.0
+pulumi 2.14.0
+nodejs 15.2.1

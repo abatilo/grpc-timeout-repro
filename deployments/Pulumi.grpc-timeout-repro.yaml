@@ -1,0 +1,5 @@
+encryptionsalt: v1:Vnu9StfpdfU=:v1:cC+2vfSl06/1nfXW:LcgamZSg96GJsh317eQ8HTbPrx/rFw==
+config:
+  aws:region: us-west-2
+  grpc-timeout-repro:pat:
+    secure: v1:vHSCJudid4L1Rmk0:da/jdaW0GxoU/lNg4hKbRRodnqeALP1G9j694DESBRXCgxmcSWkY+B9ye7Z++rhd6E/Hghu7OWo=
