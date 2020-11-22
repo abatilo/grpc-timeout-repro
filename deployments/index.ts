@@ -1,13 +1,16 @@
 import * as aws from "@pulumi/aws";
 import * as docker from "@pulumi/docker";
 import * as k8s from "@pulumi/kubernetes";
+import * as kx from "@pulumi/kubernetesx";
 import * as pulumi from "@pulumi/pulumi";
 
 const config = new pulumi.Config();
 const pat = config.requireSecret("pat");
 
 const appName = "grpc-timeout-repro";
+const appLabels = { app: appName };
 
+// Build and push docker image to GitHub Container Registry
 const image = new docker.Image(appName, {
   imageName: `ghcr.io/abatilo/${appName}`,
   build: {
@@ -21,19 +24,20 @@ const image = new docker.Image(appName, {
   },
 });
 
+// Parse kubeconfig for existing personal EKS cluster
 const clusterStackRef = new pulumi.StackReference("prod");
 const kubeconfig = clusterStackRef.getOutput("kubeconfig");
 const k8sProvider = new k8s.Provider("prod", {
   kubeconfig: kubeconfig.apply(JSON.stringify),
 });
 
-const appLabels = { app: appName };
-
+// Create ACM cert for doing TLS termination at load balancer
 const cert = new aws.acm.Certificate("cert", {
   domainName: "repro.public.abatilo.cloud",
   validationMethod: "DNS",
 });
 
+// Install traefik
 const traefik = new k8s.helm.v3.Chart(
   "traefik",
   {
@@ -49,20 +53,11 @@ const traefik = new k8s.helm.v3.Chart(
       },
       serviceType: "LoadBalancer",
       kubernetes: {
-        ingressClass: "traefik-lb",
+        ingressClass: "traefik",
         ingressEndpoint: {
           publishedService: "kube-system/traefik",
         },
         namespaces: ["default", "applications", "kube-system"],
-      },
-      dashboard: {
-        enabled: "true",
-        serviceType: "ClusterIP",
-        ingress: {
-          annotations: {
-            "pulumi.com/skipAwait": "true",
-          },
-        },
       },
       service: {
         annotations: {
@@ -89,27 +84,12 @@ const traefik = new k8s.helm.v3.Chart(
   { provider: k8sProvider }
 );
 
-const ingressClass = new k8s.networking.v1beta1.IngressClass(
-  appName,
-  {
-    metadata: {
-      name: "traefik-lb",
-    },
-    spec: {
-      controller: "traefik.io/ingress-controller",
-    },
-  },
-  { provider: k8sProvider }
-);
-
+// Build Deployment spec
 const deployment = new k8s.apps.v1.Deployment(
   appName,
   {
     metadata: {
       labels: appLabels,
-      annotations: {
-        "pulumi.com/skipAwait": "true",
-      },
     },
     spec: {
       replicas: 1,
@@ -117,9 +97,6 @@ const deployment = new k8s.apps.v1.Deployment(
       template: {
         metadata: {
           labels: appLabels,
-          annotations: {
-            "pulumi.com/skipAwait": "true",
-          },
         },
         spec: {
           containers: [
@@ -152,6 +129,7 @@ const deployment = new k8s.apps.v1.Deployment(
   { provider: k8sProvider }
 );
 
+// Build Service spec
 const service = new k8s.core.v1.Service(
   appName,
   {
@@ -172,18 +150,18 @@ const service = new k8s.core.v1.Service(
   { provider: k8sProvider }
 );
 
+// Configure Ingress to register with Traefik
 const ingress = new k8s.extensions.v1beta1.Ingress(
   appName,
   {
     metadata: {
       labels: appLabels,
       annotations: {
-        "kubernetes.io/ingress.class": "traefik-lb",
+        "kubernetes.io/ingress.class": "traefik",
         "ingress.kubernetes.io/protocol": "h2c",
       },
     },
     spec: {
-      ingressClassName: "traefik-lb",
       rules: [
         {
           host: "repro.public.abatilo.cloud",
@@ -202,5 +180,5 @@ const ingress = new k8s.extensions.v1beta1.Ingress(
       ],
     },
   },
-  { provider: k8sProvider }
+  { provider: k8sProvider, dependsOn: [traefik] }
 );

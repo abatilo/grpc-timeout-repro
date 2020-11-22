@@ -10,6 +10,7 @@ import (
 	"github.com/abatilo/grpc-timeout-repro/pkg/proto/v1/backend/api/proto/v1/backend"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 // Send connections
@@ -22,6 +23,11 @@ func main() {
 	useTLS := *useTLSFlag
 
 	dialOptions := make([]grpc.DialOption, 0)
+
+	keepAlive := grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time: 600 * time.Second,
+	})
+	dialOptions = append(dialOptions, keepAlive)
 
 	if useTLS {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
@@ -36,11 +42,10 @@ func main() {
 	defer conn.Close()
 	c := backend.NewBackendClient(conn)
 
-	resp, err := c.Echo(context.Background(), &backend.BackendRequest{
+	log.Println("Making a request")
+	_, err = c.Echo(context.Background(), &backend.BackendRequest{
 		Msg: make([]byte, 4096),
 	})
-
-	log.Println("Response: ", resp)
 	if err != nil {
 		log.Println("Received error from c.Echo: ", err)
 	}
@@ -58,18 +63,18 @@ func main() {
 		}
 	}()
 
-	// NLB has 350 second timeout
-	time.Sleep(400 * time.Second)
+	for i := 0; i < 20; i++ {
+		// NLB has 350 second timeout
+		time.Sleep(600 * time.Second)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	resp, err = c.Echo(ctx, &backend.BackendRequest{
-		Msg: make([]byte, 4096),
-	})
-
-	log.Println("2nd Response: ", resp)
-	if err != nil {
-		log.Println("2nd Received error from c.Echo: ", err)
+		log.Println("Making another request")
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		_, err = c.Echo(ctx, &backend.BackendRequest{
+			Msg: make([]byte, 4096),
+		})
+		if err != nil {
+			log.Panicf("%d: Received error from c.Echo: %#v\n", i, err)
+		}
+		cancel()
 	}
 }
