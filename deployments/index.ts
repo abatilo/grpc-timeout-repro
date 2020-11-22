@@ -44,6 +44,10 @@ const traefik = new k8s.helm.v3.Chart(
     chart: "traefik",
     version: "1.78.4",
     values: {
+      dashboard: {
+        enabled: "true",
+        serviceType: "ClusterIP",
+      },
       service: {
         annotations: {
           // "service.beta.kubernetes.io/aws-load-balancer-backend-protocol": "tcp",
