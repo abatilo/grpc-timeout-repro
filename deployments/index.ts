@@ -1,6 +1,7 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as k8s from "@pulumi/kubernetes";
+import * as aws from "@pulumi/aws";
 import * as docker from "@pulumi/docker";
+import * as k8s from "@pulumi/kubernetes";
+import * as pulumi from "@pulumi/pulumi";
 
 const config = new pulumi.Config();
 const pat = config.requireSecret("pat");
@@ -27,6 +28,35 @@ const k8sProvider = new k8s.Provider("prod", {
 });
 
 const appLabels = { app: appName };
+
+const cert = new aws.acm.Certificate("cert", {
+  domainName: "repro.public.abatilo.cloud",
+  validationMethod: "DNS",
+});
+
+const traefik = new k8s.helm.v3.Chart(
+  "traefik",
+  {
+    fetchOpts: {
+      repo: "https://charts.helm.sh/stable",
+    },
+    chart: "traefik",
+    version: "1.78.4",
+    values: {
+      service: {
+        annotations: {
+          // "service.beta.kubernetes.io/aws-load-balancer-backend-protocol": "tcp",
+          "service.beta.kubernetes.io/aws-load-balancer-ssl-cert": cert.arn,
+          "external-dns.alpha.kubernetes.io/hostname": cert.domainName,
+          "service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+          "service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy":
+            "ELBSecurityPolicy-TLS-1-1-2017-01",
+        },
+      },
+    },
+  },
+  { provider: k8sProvider }
+);
 
 const deployment = new k8s.apps.v1.Deployment(
   appName,
