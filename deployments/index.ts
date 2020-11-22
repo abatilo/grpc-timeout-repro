@@ -50,11 +50,19 @@ const traefik = new k8s.helm.v3.Chart(
       serviceType: "LoadBalancer",
       kubernetes: {
         ingressClass: "traefik-lb",
+        ingressEndpoint: {
+          publishedService: "kube-system/traefik",
+        },
         namespaces: ["default", "applications", "kube-system"],
       },
       dashboard: {
         enabled: "true",
         serviceType: "ClusterIP",
+        ingress: {
+          annotations: {
+            "pulumi.com/skipAwait": "true",
+          },
+        },
       },
       service: {
         annotations: {
@@ -68,12 +76,12 @@ const traefik = new k8s.helm.v3.Chart(
       },
       resources: {
         requests: {
-          cpu: "1",
-          memory: "1Gi",
+          cpu: "2",
+          memory: "2Gi",
         },
         limits: {
-          cpu: "1",
-          memory: "1Gi",
+          cpu: "2",
+          memory: "2Gi",
         },
       },
     },
@@ -104,7 +112,7 @@ const deployment = new k8s.apps.v1.Deployment(
       },
     },
     spec: {
-      replicas: 3,
+      replicas: 1,
       selector: { matchLabels: appLabels },
       template: {
         metadata: {
@@ -127,12 +135,12 @@ const deployment = new k8s.apps.v1.Deployment(
               ],
               resources: {
                 requests: {
-                  cpu: "200m",
-                  memory: "200Mi",
+                  cpu: "1",
+                  memory: "1Gi",
                 },
                 limits: {
-                  cpu: "200m",
-                  memory: "200Mi",
+                  cpu: "1",
+                  memory: "1Gi",
                 },
               },
             },
