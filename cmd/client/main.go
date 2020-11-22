@@ -35,9 +35,11 @@ func main() {
 	defer conn.Close()
 	c := backend.NewBackendClient(conn)
 
-	_, err = c.Echo(context.Background(), &backend.BackendRequest{
+	resp, err := c.Echo(context.Background(), &backend.BackendRequest{
 		Msg: make([]byte, 4096),
 	})
+
+	log.Println(resp)
 
 	if err != nil {
 		log.Println("Received error from c.Echo: ", err)

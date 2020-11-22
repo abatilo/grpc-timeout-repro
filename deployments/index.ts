@@ -107,3 +107,35 @@ const service = new k8s.core.v1.Service(
   },
   { provider: k8sProvider }
 );
+
+const ingress = new k8s.extensions.v1beta1.Ingress(
+  appName,
+  {
+    metadata: {
+      labels: appLabels,
+      annotations: {
+        "kubernetes.io/ingress.class": "traefik",
+        "ingress.kubernetes.io/protocol": "h2c",
+      },
+    },
+    spec: {
+      rules: [
+        {
+          host: "repro.public.abatilo.cloud",
+          http: {
+            paths: [
+              {
+                path: "/",
+                backend: {
+                  serviceName: service.metadata.name,
+                  servicePort: service.spec.ports[0].port,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  { provider: k8sProvider }
+);
