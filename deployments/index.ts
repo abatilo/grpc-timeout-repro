@@ -94,6 +94,7 @@ const deployment = new k8s.apps.v1.Deployment(
       },
     },
     spec: {
+      replicas: 3,
       selector: { matchLabels: appLabels },
       template: {
         metadata: {
@@ -114,6 +115,16 @@ const deployment = new k8s.apps.v1.Deployment(
                   protocol: "TCP",
                 },
               ],
+              resources: {
+                requests: {
+                  cpu: "200m",
+                  memory: "200Mi",
+                },
+                limits: {
+                  cpu: "200m",
+                  memory: "200Mi",
+                },
+              },
             },
           ],
         },

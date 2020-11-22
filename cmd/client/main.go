@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"time"
 
 	"github.com/abatilo/grpc-timeout-repro/pkg/proto/v1/backend/api/proto/v1/backend"
 	"google.golang.org/grpc"
@@ -42,5 +43,33 @@ func main() {
 	log.Println("Response: ", resp)
 	if err != nil {
 		log.Println("Received error from c.Echo: ", err)
+	}
+
+	go func() {
+		elapsed := 10
+		ticker := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				log.Println(elapsed, "seconds have passed")
+				elapsed += 10
+				break
+			}
+		}
+	}()
+
+	// NLB has 350 second timeout
+	time.Sleep(400 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err = c.Echo(ctx, &backend.BackendRequest{
+		Msg: make([]byte, 4096),
+	})
+
+	log.Println("2nd Response: ", resp)
+	if err != nil {
+		log.Println("2nd Received error from c.Echo: ", err)
 	}
 }
