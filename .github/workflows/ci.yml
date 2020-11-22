@@ -24,6 +24,11 @@ jobs:
           export GOVERSION=$(cat .tool-versions | grep 'golang ' | awk '{print $2}')
           echo "GOROOT=$HOME/.asdf/installs/golang/$GOVERSION/go/" >> $GITHUB_ENV
           echo "GOTOOLDIR=$HOME/.asdf/installs/golang/$GOVERSION/go/pkg/tool/linux_amd64" >> $GITHUB_ENV
+
+      - name: Create lock
+        uses: abatilo/github-action-locks@master
+        with:
+          name: "grpc-timeout-repro-${{ github.workflow }}"
       - working-directory: ./deployments
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}

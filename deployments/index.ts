@@ -39,11 +39,11 @@ const deployment = new k8s.apps.v1.Deployment(
         spec: {
           containers: [
             {
-              name: appName,
+              name: "repro",
               image: image.imageName,
               ports: [
                 {
-                  name: appName,
+                  name: "grpc",
                   containerPort: 23456,
                   protocol: "TCP",
                 },
@@ -68,7 +68,7 @@ const service = new k8s.core.v1.Service(
         {
           name: "grpc",
           port: 80,
-          targetPort: "yages",
+          targetPort: "grpc",
           protocol: "TCP",
         },
       ],
