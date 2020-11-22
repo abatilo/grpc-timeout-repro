@@ -49,7 +49,7 @@ const traefik = new k8s.helm.v3.Chart(
       },
       serviceType: "LoadBalancer",
       kubernetes: {
-        ingressClass: "traefik",
+        ingressClass: "traefik-lb",
         namespaces: ["default", "applications", "kube-system"],
       },
       dashboard: {
@@ -70,6 +70,15 @@ const traefik = new k8s.helm.v3.Chart(
   },
   { provider: k8sProvider }
 );
+
+const ingressClass = new k8s.networking.v1beta1.IngressClass(appName, {
+  metadata: {
+    name: "traefik-lb",
+  },
+  spec: {
+    controller: "traefik.io/ingress-controller",
+  },
+});
 
 const deployment = new k8s.apps.v1.Deployment(
   appName,
@@ -136,11 +145,12 @@ const ingress = new k8s.extensions.v1beta1.Ingress(
     metadata: {
       labels: appLabels,
       annotations: {
-        "kubernetes.io/ingress.class": "traefik",
+        "kubernetes.io/ingress.class": "traefik-lb",
         "ingress.kubernetes.io/protocol": "h2c",
       },
     },
     spec: {
+      ingressClassName: "traefik-lb",
       rules: [
         {
           host: "repro.public.abatilo.cloud",
