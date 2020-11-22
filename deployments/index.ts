@@ -83,7 +83,12 @@ const deployment = new k8s.apps.v1.Deployment(
     spec: {
       selector: { matchLabels: appLabels },
       template: {
-        metadata: { labels: appLabels },
+        metadata: {
+          labels: appLabels,
+          annotations: {
+            "pulumi.com/skipAwait": "true",
+          },
+        },
         spec: {
           containers: [
             {
