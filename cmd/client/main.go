@@ -39,8 +39,7 @@ func main() {
 		Msg: make([]byte, 4096),
 	})
 
-	log.Println(resp)
-
+	log.Println("Response: ", resp)
 	if err != nil {
 		log.Println("Received error from c.Echo: ", err)
 	}

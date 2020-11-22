@@ -44,6 +44,10 @@ const traefik = new k8s.helm.v3.Chart(
     chart: "traefik",
     version: "1.78.4",
     values: {
+      kubernetes: {
+        ingressClass: "traefik",
+        namespaces: ["default", "applications", "kube-system"],
+      },
       dashboard: {
         enabled: "true",
         serviceType: "ClusterIP",
@@ -66,7 +70,12 @@ const traefik = new k8s.helm.v3.Chart(
 const deployment = new k8s.apps.v1.Deployment(
   appName,
   {
-    metadata: { labels: appLabels },
+    metadata: {
+      labels: appLabels,
+      annotations: {
+        "pulumi.com/skipAwait": "true",
+      },
+    },
     spec: {
       selector: { matchLabels: appLabels },
       template: {
