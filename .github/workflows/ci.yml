@@ -25,6 +25,8 @@ jobs:
           echo "GOROOT=$HOME/.asdf/installs/golang/$GOVERSION/go/" >> $GITHUB_ENV
           echo "GOTOOLDIR=$HOME/.asdf/installs/golang/$GOVERSION/go/pkg/tool/linux_amd64" >> $GITHUB_ENV
       - working-directory: ./deployments
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         run: |
           npm ci
           pulumi up -s grpc-timeout-repro --yes --skip-preview
