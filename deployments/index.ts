@@ -44,6 +44,10 @@ const traefik = new k8s.helm.v3.Chart(
     chart: "traefik",
     version: "1.78.4",
     values: {
+      rbac: {
+        enabled: true,
+      },
+      serviceType: "LoadBalancer",
       kubernetes: {
         ingressClass: "traefik",
         namespaces: ["default", "applications", "kube-system"],
