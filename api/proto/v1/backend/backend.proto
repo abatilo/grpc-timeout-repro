@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = ".;backend";
+
+package backend;
+
+message BackendRequest {
+  bytes msg = 1;
+}
+
+message BackendResponse {
+  bytes msg = 1;
+}
+
+service backend {
+  rpc Echo(BackendRequest) returns (BackendResponse) {}
+}
