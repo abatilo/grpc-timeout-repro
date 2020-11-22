@@ -37,6 +37,7 @@ const cert = new aws.acm.Certificate("cert", {
 const traefik = new k8s.helm.v3.Chart(
   "traefik",
   {
+    namespace: "kube-system",
     fetchOpts: {
       repo: "https://charts.helm.sh/stable",
     },
