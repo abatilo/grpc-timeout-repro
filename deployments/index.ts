@@ -71,14 +71,18 @@ const traefik = new k8s.helm.v3.Chart(
   { provider: k8sProvider }
 );
 
-const ingressClass = new k8s.networking.v1beta1.IngressClass(appName, {
-  metadata: {
-    name: "traefik-lb",
+const ingressClass = new k8s.networking.v1beta1.IngressClass(
+  appName,
+  {
+    metadata: {
+      name: "traefik-lb",
+    },
+    spec: {
+      controller: "traefik.io/ingress-controller",
+    },
   },
-  spec: {
-    controller: "traefik.io/ingress-controller",
-  },
-});
+  { provider: k8sProvider }
+);
 
 const deployment = new k8s.apps.v1.Deployment(
   appName,
